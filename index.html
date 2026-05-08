@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Personal Finance Tracker</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Phosphor Icons (Optional, for clean UI icons) -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <style>
+        body {
+            background-color: #f3f4f6; /* gray-100 */
+        }
+    </style>
+</head>
+<body class="text-gray-800 antialiased font-sans flex flex-col min-h-screen">
+    <header class="bg-indigo-600 text-white p-4 shadow-md sticky top-0 z-10">
+        <div class="max-w-3xl mx-auto flex justify-between items-center">
+            <h1 class="text-xl font-bold flex items-center gap-2">
+                <i class="ph ph-wallet text-2xl"></i> Finance Tracker
+            </h1>
+            <button id="exportBtn" class="bg-indigo-700 hover:bg-indigo-800 text-white px-3 py-1 rounded text-sm transition flex items-center gap-1">
+                <i class="ph ph-download-simple"></i> Backup
+            </button>
+        </div>
+    </header>
+
+    <main class="flex-grow p-4">
+        <div class="max-w-3xl mx-auto space-y-6">
+
+            <!-- Dashboard Summary -->
+            <section id="dashboard" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex flex-col items-center justify-center">
+                    <h3 class="text-sm text-gray-500 font-medium uppercase tracking-wide">Balance</h3>
+                    <p id="totalBalance" class="text-3xl font-bold text-gray-800 mt-1">$0.00</p>
+                </div>
+                <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex flex-col items-center justify-center">
+                    <h3 class="text-sm text-gray-500 font-medium uppercase tracking-wide">Income</h3>
+                    <p id="totalIncome" class="text-2xl font-semibold text-emerald-600 mt-1">+$0.00</p>
+                </div>
+                <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex flex-col items-center justify-center">
+                    <h3 class="text-sm text-gray-500 font-medium uppercase tracking-wide">Expenses</h3>
+                    <p id="totalExpenses" class="text-2xl font-semibold text-rose-600 mt-1">-$0.00</p>
+                </div>
+            </section>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Transaction Form -->
+                <section class="bg-white p-5 rounded-xl shadow-sm border border-gray-100">
+                    <h2 class="text-lg font-bold mb-4 border-b pb-2 flex items-center gap-2">
+                        <i class="ph ph-plus-circle"></i> Add Transaction
+                    </h2>
+                    <form id="transactionForm" class="space-y-4">
+                        <div class="grid grid-cols-2 gap-3">
+                            <label class="cursor-pointer">
+                                <input type="radio" name="type" value="expense" class="peer sr-only" checked>
+                                <div class="text-center p-2 rounded border border-gray-200 peer-checked:bg-rose-50 peer-checked:border-rose-500 peer-checked:text-rose-700 transition">
+                                    Expense
+                                </div>
+                            </label>
+                            <label class="cursor-pointer">
+                                <input type="radio" name="type" value="income" class="peer sr-only">
+                                <div class="text-center p-2 rounded border border-gray-200 peer-checked:bg-emerald-50 peer-checked:border-emerald-500 peer-checked:text-emerald-700 transition">
+                                    Income
+                                </div>
+                            </label>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Amount</label>
+                            <div class="relative">
+                                <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500">$</span>
+                                <input type="number" id="amount" step="0.01" min="0" required class="w-full pl-7 p-2 border border-gray-300 rounded focus:ring-indigo-500 focus:border-indigo-500 outline-none" placeholder="0.00">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                            <select id="category" required class="w-full p-2 border border-gray-300 rounded focus:ring-indigo-500 focus:border-indigo-500 outline-none bg-white">
+                                <!-- Options will be populated by JS -->
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Date</label>
+                            <input type="date" id="date" required class="w-full p-2 border border-gray-300 rounded focus:ring-indigo-500 focus:border-indigo-500 outline-none">
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Description (Optional)</label>
+                            <input type="text" id="description" class="w-full p-2 border border-gray-300 rounded focus:ring-indigo-500 focus:border-indigo-500 outline-none" placeholder="What was this for?">
+                        </div>
+
+                        <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 rounded transition">
+                            Add Transaction
+                        </button>
+                    </form>
+                </section>
+
+                <!-- Charts Area -->
+                <section class="bg-white p-5 rounded-xl shadow-sm border border-gray-100 flex flex-col">
+                    <h2 class="text-lg font-bold mb-4 border-b pb-2 flex items-center gap-2">
+                        <i class="ph ph-pie-chart"></i> Expense Breakdown
+                    </h2>
+                    <div class="flex-grow flex items-center justify-center relative min-h-[250px]">
+                        <canvas id="expenseChart"></canvas>
+                        <div id="noChartData" class="absolute inset-0 flex items-center justify-center text-gray-400 hidden">
+                            No expenses yet.
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Transaction History -->
+            <section class="bg-white p-5 rounded-xl shadow-sm border border-gray-100">
+                <h2 class="text-lg font-bold mb-4 border-b pb-2 flex items-center gap-2">
+                    <i class="ph ph-list-dashes"></i> Recent Transactions
+                </h2>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="text-sm text-gray-500 border-b">
+                                <th class="pb-2 font-medium">Date</th>
+                                <th class="pb-2 font-medium">Description</th>
+                                <th class="pb-2 font-medium">Category</th>
+                                <th class="pb-2 font-medium text-right">Amount</th>
+                                <th class="pb-2 font-medium text-center">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="transactionList" class="text-sm">
+                            <!-- Transactions will be added here via JS -->
+                        </tbody>
+                    </table>
+                    <div id="emptyState" class="text-center py-8 text-gray-400 hidden">
+                        <i class="ph ph-receipt text-4xl mb-2"></i>
+                        <p>No transactions found.</p>
+                    </div>
+                </div>
+            </section>
+
+        </div>
+    </main>
+
+    <footer class="mt-auto py-4 text-center text-sm text-gray-500">
+        Finance Tracker &copy; <span id="currentYear"></span>. All data stored locally.
+    </footer>
+
+    <script src="app.js"></script>
+</body>
+</html>
